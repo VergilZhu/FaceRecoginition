@@ -93,12 +93,40 @@ with tf.Session() as sess:
 	A = []
 	for i in range(0, num_train_images):
 		A.append(A_temp[i])
-
 	A = tf.stack(A,0)
-	print(A.eval())
 	A = tf.transpose(A)
 
-	print(A.eval())
-	#print(tf.stack(A_temp, 0))
+	A = tf.cast(A, tf.float32)
 	# Obtain the eigenvectors & eigenvalues of A
-	#print(imgSet_mean.eval())
+
+	[e, V] = tf.self_adjoint_eig(tf.matmul(tf.transpose(A), A))
+
+	# if D[0][0] == 0, set D[0][0] to 1 for numerical resaon
+
+	# Choose the best 95% of eigenvalues as the new reduced dimension
+	p_eigenfaces = 0.95
+
+	eigsum = tf.reduce_sum(e, 0)
+	csum = 0;
+	for i in range(num_train_images-1, 0, -1):
+		csum = csum + e[i]
+		r = csum/eigsum
+
+
+		# Cost a lot to call .eval() every time
+		if r.eval() > p_eigenfaces:
+			k95 = i
+			break
+	print('The number of eigenvaluse is '+str(num_train_images))
+	print('Keep the index from '+str(k95)+' to '+str(num_train_images-1))
+	print('The last '+str(num_train_images-k95)+' are kept')
+
+	# Determin the weights with reference to the set of eigenfaces Use
+	# Use the last k95 componments
+	i_start = k95
+	i_end = num_train_images-1
+
+	# Obtain the ranked eigenfaces Ur 
+	Ur = tf.matmul(A, V)[:][i_start:i_end+1]
+	
+	
