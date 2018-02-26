@@ -70,10 +70,7 @@ with tf.Session() as sess:
 
 
 
-	temp = tf.add_n(imgSet_train)
-	print(temp.eval())
-	print(num_train_images)
-	temp = temp/num_train_images
+	temp = tf.add_n(imgSet_train)/num_train_images
 	print(temp.eval())
 
 	mean_face = tf.reshape(temp, [112, 92])
