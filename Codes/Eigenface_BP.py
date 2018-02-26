@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2' # filter the warning
+import matplotlib as mplot
+mplot.use("TkAgg")
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt;
+
+folderPath = '/home/vergil/Files/Git/FaceRecoginition/FaceDatabase/'
 
 def addLayer(inputData,inSize,outSize,activity_function = None):  
     Weights = tf.Variable(tf.random_normal([inSize,outSize]))   
@@ -12,54 +19,65 @@ def addLayer(inputData,inSize,outSize,activity_function = None):
     else:  
         ans = activity_function(weights_plus_b)  
     return ans  
-  
-  
-# x_data = np.linspace(-1,1,300)[:,np.newaxis] # 转为列向量  
-# noise = np.random.normal(0,0.05,x_data.shape)  
-# y_data = np.square(x_data)+0.5+noise
 
-# xs = tf.placeholder(tf.float32,[None,1]) # 样本数未知，特征数为1，占位符最后要以字典形式在运行中填入  
-# ys = tf.placeholder(tf.float32,[None,1])  
-  
-# l1 = addLayer(xs,1,10,activity_function=tf.nn.relu) # relu是激励函数的一种  
-# l2 = addLayer(l1,10,1,activity_function=None)  
-# loss = tf.reduce_mean(tf.reduce_sum(tf.square((ys-l2)),reduction_indices = [1]))#需要向相加索引号，redeuc执行跨纬度操作  
-  
-# train =  tf.train.GradientDescentOptimizer(0.1).minimize(loss) # 选择梯度下降法  
-  
-# init = tf.initialize_all_variables()  
-# sess = tf.Session()  
-# sess.run(init)  
-  
-# for i in range(10000):  
-#     sess.run(train,feed_dict={xs:x_data,ys:y_data}) 
-#     if i%50 == 0:  
-#         print sess.run(loss,feed_dict={xs:x_data,ys:y_data})   
 
-_data_train = np.array([[1,6],[2,5],[3,7],[4,5],[5,3],[6,1],[7,2],[8,4],[9,2],[10,5]])
-_lable_train = np.array([0,0,0,0,1,1,1,1,1,1]).reshape(-1,1)
-# _data_test = [[1.5,3],[2.5,2],[3.5,4],[4.5,2]]
-# _lable_test = [0,0,0,1]
+filePath = folderPath + 'att_faces_10_people/'
 
-xs = tf.placeholder(tf.float32,[None,2])
-ys = tf.placeholder(tf.float32,[None,1])
+# parameter set
+num_samples = 10 # Number of samples/people
+num_images_each_sample = 10 # NUmber of photos of each sample
+train_test_ratio = 0.6
+num_train = int(train_test_ratio * num_images_each_sample); # Number of Trained data
+num_test = int((1-train_test_ratio) * num_images_each_sample) # Number of Test data
+num_train_images = int(num_samples * num_train)
+num_test_images = int(num_samples * num_test)
 
-hidden_layer = addLayer(xs, 2, 5, activity_function=tf.nn.sigmoid)
-output_layer = addLayer(hidden_layer, 5, 1, activity_function=tf.nn.sigmoid)
+imgSet_train = []
+imgSet_test = []
+imSize = [112, 92]
 
-loss = tf.reduce_sum(tf.square(ys-output_layer))
 
-train_step = tf.train.GradientDescentOptimizer(0.1).minimize(loss)
+with tf.Session() as sess:
 
-init = tf.initialize_all_variables()
-sess = tf.Session()
 
-sess.run(init)
 
-for i in range(500):
-	sess.run(train_step, feed_dict={xs:_data_train, ys:_lable_train})
+	for i in range(1, num_train+1):
+		for j in range(1, num_samples+1):
 
-	#print(sess.run(loss, feed_dict={xs:_data_train, ys:_lable_train}))
+			imgPath = filePath + 's'+str(j)+'/'+str(i)+'.jpg'
+			image_raw_data_jpg = tf.gfile.FastGFile(imgPath, 'r').read()
+			img_data_jpg = tf.image.decode_jpeg(image_raw_data_jpg)
+			img_data_jpg = tf.image.convert_image_dtype(img_data_jpg, dtype=tf.uint8)
+			img_data_jpg = tf.cast(img_data_jpg, tf.int16)
+			# dtype is changed to tf.int16 instead of tf.uint8 cause not supported on this computer
+			img_data_jpg = tf.reshape(img_data_jpg, [1, imSize[0]*imSize[1]])
+			
+			imgSet_train.append(img_data_jpg)
 
-print('---------------')
-print(sess.run(output_layer, feed_dict={xs:[[4,-1],[4,0],[4,1],[4,2],[4,3],[4,4],[4,5]]}))	
+	for i in range(num_train+1, num_images_each_sample+1):
+		for j in range(1, num_samples+1):
+
+			imgPath = filePath + 's'+str(j)+'/'+str(i)+'.jpg'
+			image_raw_data_jpg = tf.gfile.FastGFile(imgPath, 'r').read()
+			img_data_jpg = tf.image.decode_jpeg(image_raw_data_jpg)
+			img_data_jpg = tf.image.convert_image_dtype(img_data_jpg, dtype=tf.uint8)
+			img_data_jpg = tf.cast(img_data_jpg, tf.int16)
+			# dtype is changed to tf.int16 instead of tf.uint8 cause not supported on this computer
+			img_data_jpg = tf.reshape(img_data_jpg, [1, imSize[0]*imSize[1]])
+			
+			imgSet_test.append(img_data_jpg)
+
+
+
+
+	temp = tf.add_n(imgSet_train)
+	print(temp.eval())
+	print(num_train_images)
+	temp = temp/num_train_images
+	print(temp.eval())
+
+	mean_face = tf.reshape(temp, [112, 92])
+
+	plt.figure('Face1')
+	plt.imshow(mean_face.eval(), cmap=plt.cm.gray_r)
+	plt.show()
