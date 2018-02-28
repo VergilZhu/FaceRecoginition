@@ -39,6 +39,8 @@ labSet_test = []
 imSize = [112, 92]
 
 
+
+
 with tf.Session() as sess:
 
 
@@ -56,7 +58,12 @@ with tf.Session() as sess:
 			
 			imgSet_train.append(img_data_jpg)
 
-			labSet_train.append(j)
+			label = [0,0,0,0,0,0,0,0,0,0]
+			label[j-1] = 1
+
+			labSet_train.append(label)
+
+	labSet_train = tf.stack(labSet_train)
 
 
 	# Build image set & label for test
@@ -73,7 +80,13 @@ with tf.Session() as sess:
 			
 			imgSet_test.append(img_data_jpg)
 
-			labSet_test.append(j) # label array for test
+			label = [0,0,0,0,0,0,0,0,0,0]
+			label[j-1] = 1
+
+			labSet_test.append(label)
+
+	labSet_test = tf.stack(labSet_test)
+
 
 	# Calculate mean image
 	imgSet_mean = tf.add_n(imgSet_train)/num_train_images
@@ -97,6 +110,7 @@ with tf.Session() as sess:
 	A = tf.transpose(A)
 
 	A = tf.cast(A, tf.float32)
+
 	# Obtain the eigenvectors & eigenvalues of A
 
 	[e, V] = tf.self_adjoint_eig(tf.matmul(tf.transpose(A), A))
@@ -126,7 +140,29 @@ with tf.Session() as sess:
 	i_start = k95
 	i_end = num_train_images-1
 
-	# Obtain the ranked eigenfaces Ur 
-	Ur = tf.matmul(A, V)[:][i_start:i_end+1]
+
+	# Obtain the ranked eigenfaces Ur  ???not sure with transpose part
+	Ur = tf.matmul(A, tf.transpose(V[:][i_start:i_end+1]))
 	
+	# Obtain the ranged eigenvalues 
+	er = tf.diag(e[i_start:i_end+1])
+
+	# Obtain the eigen weight mattrix
+	EigenWeights = tf.matmul(tf.matmul(tf.matrix_inverse(er), tf.transpose(Ur)), A)
+
+
+	# Build the model and train
+
+	dinput = tf.transpose(EigenWeights)
+	doutput = labSet_train
+
+	# print(dinput[0])
+	# print(doutput[0])
+
+	tfinput = tf.placeholder(tf.float32, [num_train_images-k95, None])
+	tfoutput = tf.placeholder(tf.float32, [num_samples, None])
+
+	layer1 = addLayer(tfinput, 38, 15, activity_function=tf.nn.sigmoid)
+	layer2 = addLayer(layer1, 15, 10, activity_function=tf.nn.sigmoid)
+
 	
