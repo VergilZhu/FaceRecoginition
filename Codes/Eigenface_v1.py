@@ -172,9 +172,9 @@ with tf.Session() as sess:
 	tfinput = tf.placeholder(tf.float32, [None, num_train_images-k95])
 	tfoutput = tf.placeholder(tf.float32, [None, num_samples])
 
-	layer1 = addLayer(tfinput, num_train_images-k95, 30, activity_function=tf.nn.relu)
+	layer1 = addLayer(tfinput, num_train_images-k95, 50, activity_function=tf.nn.relu)
 
-	layer2 = addLayer(layer1, 30, 10, activity_function=tf.nn.relu)
+	layer2 = addLayer(layer1, 50, 10, activity_function=tf.nn.relu)
 
 
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer2))
