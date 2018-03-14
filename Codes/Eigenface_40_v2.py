@@ -34,10 +34,10 @@ def addLayer(inputData,inSize,outSize,activity_function = None):
 
 
 
-filePath = folderPath + 'att_faces_10_people/'
+filePath = folderPath + 'att_faces_40_people/'
 
 # parameter set
-num_samples = 10 # Number of samples/people
+num_samples = 40 # Number of samples/people
 num_images_each_sample = 10 # NUmber of photos of each sample
 train_test_ratio = 0.6
 num_train = int(train_test_ratio * num_images_each_sample); # Number of Trained data
@@ -93,7 +93,6 @@ with tf.Session() as sess:
 			
 			imgSet_test.append(img_data_jpg)
 
-			#label = [0,0,0,0,0,0,0,0,0,0]
 			label = np.zeros(num_samples)
 			label[j-1] = 1
 
@@ -174,14 +173,20 @@ with tf.Session() as sess:
 	tfinput = tf.placeholder(tf.float32, [None, num_train_images-k95])
 	tfoutput = tf.placeholder(tf.float32, [None, num_samples])
 
-	layer1 = addLayer(tfinput, num_train_images-k95, 50, activity_function=tf.nn.relu)
+	layer1 = addLayer(tfinput, num_train_images-k95, 100, activity_function=tf.nn.relu)
 
-	layer2 = addLayer(layer1, 50, num_samples, activity_function=tf.nn.relu)
+	layer2 = addLayer(layer1, 100, num_samples, activity_function=tf.nn.relu)
+	layer3 = addLayer(layer1, 100, num_samples, activity_function=tf.nn.relu)
+
+	layer4 = (layer2+layer3)/2
+
+	cross_entropy = tf.reduce_mean((tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer2)+tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer3))/2)
+	
 
 
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer2))
 	
-	train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
+	train_step = tf.train.GradientDescentOptimizer(0.1).minimize(cross_entropy)
 
 	sess.run(tf.global_variables_initializer())
 
@@ -206,7 +211,7 @@ with tf.Session() as sess:
 	eigen_weights_test = tf.transpose(tf.matmul(tf.matmul(tf.matrix_inverse(er), tf.transpose(Ur)), B))
 
 
-	correct_prediction = tf.equal(tf.argmax(layer2, 1), tf.argmax(labSet_test, 1))	
+	correct_prediction = tf.equal(tf.argmax(layer4, 1), tf.argmax(labSet_test, 1))	
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
 	
@@ -214,6 +219,6 @@ with tf.Session() as sess:
 	
 	for i in range(0,num_test_images):
 		# print(sess.run(layer2[i], feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
-		print(sess.run(tf.argmax(layer2[i], 0), feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
+		print(sess.run(tf.argmax(layer4[i], 0), feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
 
 	print accuracy.eval(feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()})

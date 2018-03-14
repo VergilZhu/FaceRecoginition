@@ -9,7 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-folderPath = '/home/vergil/Files/Git/FaceRecoginition/FaceDatabase/'
+#folderPath = '/home/vergil/Files/Git/FaceRecoginition/FaceDatabase/'
+folderPath = '/Users/roroco/Desktop/zzc/FaceRecoginition/FaceDatabase/'
 
 # def addLayer(inputData,inSize,outSize,activity_function = None):  
 #     Weights = tf.Variable(tf.random_normal([inSize,outSize]))   

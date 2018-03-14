@@ -177,11 +177,13 @@ with tf.Session() as sess:
 	layer1 = addLayer(tfinput, num_train_images-k95, 50, activity_function=tf.nn.relu)
 
 	layer2 = addLayer(layer1, 50, num_samples, activity_function=tf.nn.relu)
+	layer3 = addLayer(layer1, 50, num_samples, activity_function=tf.nn.relu)
 
+	layer4 = (layer2+layer3)/2
 
-	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer2))
+	cross_entropy = tf.reduce_mean((tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer2)+tf.nn.softmax_cross_entropy_with_logits(labels=doutput, logits=layer3))/2)
 	
-	train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
+	train_step = tf.train.GradientDescentOptimizer(0.1).minimize(cross_entropy)
 
 	sess.run(tf.global_variables_initializer())
 
@@ -206,7 +208,7 @@ with tf.Session() as sess:
 	eigen_weights_test = tf.transpose(tf.matmul(tf.matmul(tf.matrix_inverse(er), tf.transpose(Ur)), B))
 
 
-	correct_prediction = tf.equal(tf.argmax(layer2, 1), tf.argmax(labSet_test, 1))	
+	correct_prediction = tf.equal(tf.argmax(layer4, 1), tf.argmax(labSet_test, 1))	
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
 	
@@ -214,6 +216,6 @@ with tf.Session() as sess:
 	
 	for i in range(0,num_test_images):
 		# print(sess.run(layer2[i], feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
-		print(sess.run(tf.argmax(layer2[i], 0), feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
+		print(sess.run(tf.argmax(layer4[i], 0), feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()}))
 
 	print accuracy.eval(feed_dict={tfinput:eigen_weights_test.eval(), tfoutput:labSet_test.eval()})
